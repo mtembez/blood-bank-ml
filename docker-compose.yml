@@ -1,0 +1,41 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: blood_bank_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: blood_bank
+      POSTGRES_USER: jifunze
+      POSTGRES_PASSWORD: jifunze
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U jifunze -d blood_bank"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build: .
+    container_name: blood_bank_api
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DJANGO_SECRET_KEY: dev-blood-bank-secret-key-change-in-prod
+      DJANGO_DEBUG: "1"
+      POSTGRES_DB: blood_bank
+      POSTGRES_USER: jifunze
+      POSTGRES_PASSWORD: jifunze
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+
+volumes:
+  pgdata:
